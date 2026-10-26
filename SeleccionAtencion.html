@@ -1,0 +1,82 @@
+<!-- CONTENEDOR PRINCIPAL INYECTABLE -->
+<div class="p-6 max-w-6xl mx-auto bg-white rounded-xl shadow-sm mt-6 border border-gray-100">
+  
+  <!-- Encabezado -->
+  <div class="flex items-center space-x-3 mb-6">
+    <div class="text-indigo-600 text-3xl">
+      <i class="fas fa-file-invoice"></i>
+    </div>
+    <div>
+      <h2 class="text-2xl font-bold text-gray-800">Registrar Atención</h2>
+      <p class="text-sm text-gray-500">Seleccione el medio de atención para iniciar el registro.</p>
+      
+    </div>
+    <div>
+      <button type="button" onclick="if (typeof goHome === 'function') { goHome(); }" 
+      class="px-3 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition-colors border border-slate-300 self-start sm:self-auto">
+      <i class="fas fa-sign-out-alt"></i> Salir
+    </button>
+    </div>
+  </div>
+    
+  <!-- Rejilla de Opciones (4 Tarjetas de Proser) -->
+  <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+    
+    <!-- Tarjeta: Presencial -->
+    <div onclick="seleccionarMedio('Presencial')" 
+         class="flex flex-col items-center justify-center p-8 bg-white border border-gray-200 rounded-xl cursor-pointer hover:border-indigo-500 hover:shadow-md transition-all duration-200 group">
+      <div class="text-indigo-500 text-4xl mb-4 group-hover:scale-110 transition-transform duration-200">
+        <i class="fas fa-handshake"></i>
+      </div>
+      <span class="font-semibold text-gray-700 group-hover:text-indigo-600">Presencial</span>
+    </div>
+
+    <!-- Tarjeta: Virtual -->
+    <div onclick="seleccionarMedio('Virtual')" 
+         class="flex flex-col items-center justify-center p-8 bg-white border border-gray-200 rounded-xl cursor-pointer hover:border-indigo-500 hover:shadow-md transition-all duration-200 group">
+      <div class="text-blue-500 text-4xl mb-4 group-hover:scale-110 transition-transform duration-200">
+        <i class="fas fa-desktop"></i>
+      </div>
+      <span class="font-semibold text-gray-700 group-hover:text-indigo-600">Virtual</span>
+    </div>
+
+    <!-- Tarjeta: Quipux -->
+    <div onclick="seleccionarMedio('Quipux')" 
+         class="flex flex-col items-center justify-center p-8 bg-white border border-gray-200 rounded-xl cursor-pointer hover:border-indigo-500 hover:shadow-md transition-all duration-200 group">
+      <div class="text-emerald-500 text-4xl mb-4 group-hover:scale-110 transition-transform duration-200">
+        <i class="fas fa-envelope-open-text"></i>
+      </div>
+      <span class="font-semibold text-gray-700 group-hover:text-emerald-600">Quipux</span>
+    </div>
+
+    <!-- Tarjeta: Reunión -->
+    <div onclick="seleccionarMedio('Reunion')" 
+         class="flex flex-col items-center justify-center p-8 bg-white border border-gray-200 rounded-xl cursor-pointer hover:border-indigo-500 hover:shadow-md transition-all duration-200 group">
+      <div class="text-amber-500 text-4xl mb-4 group-hover:scale-110 transition-transform duration-200">
+        <i class="fas fa-users"></i>
+      </div>
+      <span class="font-semibold text-gray-700 group-hover:text-amber-600">Reunión</span>
+    </div>
+
+  </div>
+</div>
+
+<!-- LÓGICA DEL COMPONENTE -->
+<script>
+  /**
+   * Guarda el medio seleccionado en el estado global de la SPA
+   * y carga el formulario de consultas de inmediato.
+   */
+  function seleccionarMedio(medio) {
+  // Almacenar la modalidad seleccionada en el estado global
+  window.currentMedioAtencion = medio;
+  console.log("[SYSGUP] Medio de atención seleccionado: " + medio);
+
+  // Carga dinámica mediante la arquitectura SPA
+  if (typeof loadView === 'function') {
+    loadView('ConsultaForm', { medio: medio });
+  } else {
+    alert("Error de navegación: El motor de carga SPA (loadView) no está disponible.");
+  }
+}
+</script>

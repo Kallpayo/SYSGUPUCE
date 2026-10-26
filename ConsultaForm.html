@@ -1,0 +1,513 @@
+<!-- MÓDULO SPA: REGISTRO DE ATENCIÓN Y CONSULTAS -->
+<div class="max-w-5xl mx-auto bg-white p-6 md:p-8 rounded-xl shadow-md border border-slate-200 mt-4">
+  
+  <!-- ENCABEZADO, BOTÓN SALIR Y BANNER DE MEDIO -->
+  <div class="flex flex-col sm:flex-row sm:items-center justify-between border-b border-slate-200 pb-5 mb-6 gap-4">
+    <div>
+      <h2 class="text-2xl font-bold text-slate-800 flex items-center gap-2">
+        <i class="fas fa-file-signature text-indigo-600"></i> Registrar Atención
+      </h2>
+      <p class="text-sm text-slate-500 mt-1">
+        Complete la información requerida para registrar la atención o consulta.
+      </p>
+    </div>
+
+    <div class="flex items-center gap-3">
+      <!-- Banner Medio Seleccionado -->
+      <div class="flex items-center gap-2 bg-indigo-50 border border-indigo-200 px-3 py-1.5 rounded-lg">
+        <span class="text-xs font-semibold text-indigo-700 uppercase tracking-wider">
+          Medio: <strong id="displayMedioTexto" class="text-sm font-bold text-indigo-900">PRESENCIAL</strong>
+        </span>
+        <button type="button" onclick="loadView('SeleccionAtencion', {}, this)" 
+          class="text-xs text-red-600 hover:text-red-800 font-medium flex items-center gap-1 transition-colors ml-1">
+          <i class="fas fa-times"></i> Cambiar
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- FORMULARIO PRINCIPAL -->
+  <form id="consultaForm" onsubmit="ConsultaModule.handleSubmit(event)" class="space-y-6">
+    <input type="hidden" id="medioAtencion" name="medioAtencion" value="Presencial">
+
+    <!-- BÚSQUEDA Y SELECCIÓN DE USUARIO PRINCIPAL (SE OCULTA EN MODO REUNIÓN) -->
+    <div id="usuarioContainer" class="p-4 bg-slate-50 rounded-lg border border-slate-200">
+      <label class="block text-sm font-semibold text-slate-700 mb-2">
+        Usuario Requiriente <span class="text-red-500">*</span>
+      </label>
+      
+      <div id="userSearchBox" class="relative">
+        <input type="text" id="mainUserSearchInput" oninput="ConsultaModule.handleUserSearchInput()" 
+          placeholder="Buscar por Nombre, ID o Correo..." 
+          class="w-full pl-10 pr-4 py-2.5 rounded-lg border border-slate-300 focus:ring-2 focus:ring-indigo-500 text-sm">
+        <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400">
+          <i class="fas fa-search"></i>
+        </div>
+        <div id="mainUserSearchResults" class="absolute z-20 w-full mt-1 bg-white border border-slate-200 rounded-lg shadow-lg max-h-56 overflow-y-auto hidden"></div>
+      </div>
+
+      <div id="mainUserSelectedBadge" class="hidden flex items-center justify-between bg-indigo-100 border border-indigo-300 px-4 py-2.5 rounded-lg text-sm">
+        <div class="flex items-center gap-2 text-indigo-900 font-semibold">
+          <i class="fas fa-user-check text-indigo-600"></i>
+          <span id="mainUserNameDisplay">Nombre del Usuario</span>
+          <span id="mainUserEmailDisplay" class="text-xs text-indigo-700 font-normal">(correo@uce.edu.ec)</span>
+        </div>
+        <button type="button" onclick="ConsultaModule.clearMainUser()" class="text-indigo-600 hover:text-indigo-900 font-bold ml-2">
+          <i class="fas fa-times"></i>
+        </button>
+      </div>
+      <input type="hidden" id="usuarioID" name="usuarioID">
+    </div>
+
+    <!-- SECCIÓN DE PARTICIPANTES MÚLTIPLES (EXCLUSIVO MODO REUNIÓN) -->
+    <div id="participantesGroup" class="hidden p-4 bg-amber-50/60 rounded-lg border border-amber-200">
+      <label class="block text-sm font-semibold text-slate-700 mb-2">
+        Participantes de la Reunión <span class="text-red-500">*</span>
+      </label>
+      <div class="relative mb-3">
+        <input type="text" id="partSearchInput" oninput="ConsultaModule.handlePartSearchInput()" 
+          placeholder="Buscar y agregar participantes de la reunión..." 
+          class="w-full pl-10 pr-4 py-2 rounded-lg border border-slate-300 focus:ring-2 focus:ring-amber-500 text-sm">
+        <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400">
+          <i class="fas fa-user-plus"></i>
+        </div>
+        <div id="partSearchResults" class="absolute z-20 w-full mt-1 bg-white border border-slate-200 rounded-lg shadow-lg max-h-48 overflow-y-auto hidden"></div>
+      </div>
+
+      <div id="participantesChips" class="flex flex-wrap gap-2 pt-1"></div>
+    </div>
+
+    <!-- TIEMPOS Y CAMPOS GENERALES -->
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+      <div>
+        <label class="block text-sm font-semibold text-slate-700 mb-1">Fecha de Consulta <span class="text-red-500">*</span></label>
+        <input type="date" id="fechaConsulta" name="fechaConsulta" required 
+          class="w-full rounded-lg border-slate-300 p-2.5 border focus:ring-2 focus:ring-indigo-500 text-sm bg-white">
+      </div>
+      <div>
+        <label class="block text-sm font-semibold text-slate-700 mb-1">Hora Inicio <span class="text-red-500">*</span></label>
+        <input type="time" id="horaVisita" name="horaVisita" required 
+          class="w-full rounded-lg border-slate-300 p-2.5 border focus:ring-2 focus:ring-indigo-500 text-sm bg-white">
+      </div>
+      <div>
+        <label class="block text-sm font-semibold text-slate-700 mb-1">Hora Fin <span class="text-red-500">*</span></label>
+        <input type="time" id="horaFin" name="horaFin" required 
+          class="w-full rounded-lg border-slate-300 p-2.5 border focus:ring-2 focus:ring-indigo-500 text-sm bg-white">
+      </div>
+    </div>
+
+    <!-- DROPDOWN FACULTAD DESDE LA BDD (VISIBLE EN REUNIÓN) -->
+    <div id="facultadGroup" class="hidden">
+      <label class="block text-sm font-semibold text-slate-700 mb-1">Facultad / Dirección <span class="text-red-500">*</span></label>
+      <select id="facultadReunion" name="facultadReunion" 
+        class="w-full rounded-lg border-slate-300 p-2.5 border focus:ring-2 focus:ring-indigo-500 text-sm bg-white">
+        <option value="">Cargando facultades...</option>
+      </select>
+    </div>
+
+    <!-- NÚMERO QUIPUX (VISIBLE EN QUIPUX) -->
+    <div id="quipuxGroup" class="hidden">
+      <label class="block text-sm font-semibold text-slate-700 mb-1">Número de Trámite Quipux <span class="text-red-500">*</span></label>
+      <input type="text" id="numeroQuipux" name="numeroQuipux" placeholder="Ej. UCE-R-2026-0001-M" 
+        class="w-full rounded-lg border-slate-300 p-2.5 border focus:ring-2 focus:ring-indigo-500 text-sm font-mono">
+    </div>
+
+    <!-- CLASIFICACIÓN DE ATENCIÓN (CONECTADOS A BDD) -->
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+      <div>
+        <label class="block text-sm font-semibold text-slate-700 mb-1">Tipo de Consulta <span class="text-red-500">*</span></label>
+        <select id="tipoConsulta" name="tipoConsulta" required 
+          class="w-full rounded-lg border-slate-300 p-2.5 border focus:ring-2 focus:ring-indigo-500 text-sm bg-white">
+          <option value="">Cargando catálogo...</option>
+        </select>
+      </div>
+      <div>
+        <label class="block text-sm font-semibold text-slate-700 mb-1">Funcionario UP <span class="text-red-500">*</span></label>
+        <select id="nombreFuncionarioQueAtendio" name="nombreFuncionarioQueAtendio" required 
+          class="w-full rounded-lg border-slate-300 p-2.5 border focus:ring-2 focus:ring-indigo-500 text-sm bg-white">
+          <option value="">Cargando funcionarios...</option>
+        </select>
+      </div>
+    </div>
+
+    <!-- TEMA / DETALLE Y DESARROLLO -->
+    <div>
+      <label id="temaLabel" class="block text-sm font-semibold text-slate-700 mb-1">Motivo / Detalle de la Consulta <span class="text-red-500">*</span></label>
+      <textarea id="temaOrdenDelDia" name="temaOrdenDelDia" rows="3" required 
+        placeholder="Describa brevemente el tema tratado..." 
+        class="w-full rounded-lg border-slate-300 p-2.5 border focus:ring-2 focus:ring-indigo-500 text-sm"></textarea>
+    </div>
+
+    <!-- RESULTADO Y AGENDAMIENTO DINÁMICO -->
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+      <div>
+        <label class="block text-sm font-semibold text-slate-700 mb-1">Tipo de Respuesta / Solución <span class="text-red-500">*</span></label>
+        <select id="tipoSolucion" name="tipoSolucion" required 
+          class="w-full rounded-lg border-slate-300 p-2.5 border focus:ring-2 focus:ring-indigo-500 text-sm bg-white">
+          <option value="">Seleccione...</option>
+          <option value="Consulta Solventada">Consulta Solventada</option>
+          <option value="Acuerdo / Compromiso">Acuerdo / Compromiso</option>
+          <option value="Trámite Enviado">Trámite Enviado</option>
+          <option value="Pendiente Información">Pendiente Información</option>
+        </select>
+      </div>
+      
+      <!-- AGENDADA PREVIAMENTE (SE OCULTA EN QUIPUX) -->
+      <div id="agendadaGroup">
+        <label class="block text-sm font-semibold text-slate-700 mb-1">¿Agendada Previamente? <span class="text-red-500">*</span></label>
+        <select id="agendadaPreviamente" name="agendadaPreviamente" required 
+          class="w-full rounded-lg border-slate-300 p-2.5 border focus:ring-2 focus:ring-indigo-500 text-sm bg-white">
+          <option value="">Seleccione...</option>
+          <option value="SI">Sí</option>
+          <option value="NO">No</option>
+        </select>
+      </div>
+    </div>
+
+    <!-- ACUERDOS Y COMPROMISOS / RESUMEN DE RESPUESTA DÉ QUIPUX -->
+    <div>
+      <label id="lblAcuerdos" class="block text-sm font-semibold text-slate-700 mb-1">Acuerdos / Compromisos Alcanzados</label>
+      <textarea id="acuerdosCompromisos" name="acuerdosCompromisos" rows="2" 
+        placeholder="Detalle los compromisos o resumen..." 
+        class="w-full rounded-lg border-slate-300 p-2.5 border focus:ring-2 focus:ring-indigo-500 text-sm"></textarea>
+    </div>
+
+    <!-- FEEDBACK -->
+    <div id="conFeedbackMsg" class="hidden p-4 rounded-lg text-sm font-medium"></div>
+
+    <!-- ACCIONES -->
+    <div class="flex items-center justify-end border-t border-slate-200 pt-5 gap-3">
+      <button type="button" onclick="loadView('SeleccionAtencion', {}, this)" 
+        class="px-4 py-2 border border-slate-300 text-slate-700 hover:bg-slate-50 rounded-lg text-sm font-medium transition-colors">
+        Salir
+      </button>
+      <button type="submit" id="btnSaveConsulta" 
+        class="px-6 py-2 bg-indigo-600 text-white hover:bg-indigo-700 rounded-lg text-sm font-medium shadow-sm transition-colors flex items-center gap-2">
+        <i class="fas fa-save"></i> <span>Registrar Atención</span>
+      </button>
+    </div>
+  </form>
+</div>
+
+<!-- LÓGICA JAVASCRIPT REFINADA -->
+<script>
+  window.ConsultaModule = (function() {
+    let participantesList = [];
+    let searchDebounceUser = null;
+    let searchDebouncePart = null;
+
+    function init() {
+      const medio = window.currentMedioAtencion || (window.SysgupState && window.SysgupState.medio) || 'Presencial';
+      document.getElementById('medioAtencion').value = medio;
+      document.getElementById('displayMedioTexto').textContent = medio.toUpperCase();
+
+      const now = new Date();
+      document.getElementById('fechaConsulta').value = now.toISOString().split('T')[0];
+      const hours = String(now.getHours()).padStart(2, '0');
+      const mins = String(now.getMinutes()).padStart(2, '0');
+      document.getElementById('horaVisita').value = `${hours}:${mins}`;
+
+      applyModalLayout(medio);
+      loadCatalogs();
+    }
+
+    function applyModalLayout(medio) {
+  const uContainer = document.getElementById('usuarioContainer');
+  const pGroup = document.getElementById('participantesGroup');
+  const fGroup = document.getElementById('facultadGroup');
+  const qGroup = document.getElementById('quipuxGroup');
+  const agGroup = document.getElementById('agendadaGroup');
+  const selAgendada = document.getElementById('agendadaPreviamente');
+  const lblAcuerdos = document.getElementById('lblAcuerdos');
+  const tLabel = document.getElementById('temaLabel');
+
+  const mLower = medio.toLowerCase();
+
+  // Configuración base por defecto
+  uContainer.classList.remove('hidden');
+  document.getElementById('usuarioID').required = true;
+  pGroup.classList.add('hidden');
+  fGroup.classList.add('hidden');
+  qGroup.classList.add('hidden');
+  agGroup.classList.remove('hidden');
+  selAgendada.required = true;
+
+  document.getElementById('facultadReunion').required = false;
+  document.getElementById('numeroQuipux').required = false;
+  lblAcuerdos.textContent = "Acuerdos / Compromisos Alcanzados";
+
+  if (mLower === 'reunion' || mLower === 'reunión') {
+    uContainer.classList.add('hidden');
+    document.getElementById('usuarioID').required = false;
+    
+    pGroup.classList.remove('hidden');
+    fGroup.classList.remove('hidden');
+    document.getElementById('facultadReunion').required = true;
+    tLabel.textContent = "Tema / Orden del Día *";
+
+  } else if (mLower === 'quipux') {
+    // MODO QUIPUX: Muestra Usuario + Facultad + Trámite Quipux
+    qGroup.classList.remove('hidden');
+    fGroup.classList.remove('hidden'); // <-- HABILITAMOS SELECCIÓN DE FACULTAD
+    document.getElementById('facultadReunion').required = true;
+    document.getElementById('numeroQuipux').required = true;
+    tLabel.textContent = "Motivo / Asunto Quipux *";
+    
+    // Ocultar agendada previamente y fijar NO
+    agGroup.classList.add('hidden');
+    selAgendada.required = false;
+    selAgendada.value = "NO";
+
+    lblAcuerdos.textContent = "Resumen de la respuesta enviada";
+  } else {
+    tLabel.textContent = "Motivo / Detalle de la Consulta *";
+  }
+}
+
+    function loadCatalogs() {
+  // Cargar TipoConsulta
+  google.script.run
+    .withSuccessHandler(dataJson => {
+      try {
+        const list = typeof dataJson === 'string' ? JSON.parse(dataJson) : dataJson;
+        const sel = document.getElementById('tipoConsulta');
+        if (sel) {
+          sel.innerHTML = '<option value="">-- Seleccione Tipo --</option>';
+          list.forEach(item => { sel.innerHTML += `<option value="${item}">${item}</option>`; });
+        }
+      } catch(e) { console.error("Error al cargar TipoConsulta:", e); }
+    })
+    .getDropdownData('TipoConsulta');
+
+  // Cargar Funcionario que Atendió (MiembrosUP)
+  google.script.run
+    .withSuccessHandler(dataJson => {
+      try {
+        const list = typeof dataJson === 'string' ? JSON.parse(dataJson) : dataJson;
+        const sel = document.getElementById('nombreFuncionarioQueAtendio');
+        if (sel) {
+          sel.innerHTML = '<option value="">-- Seleccione Funcionario --</option>';
+          list.forEach(item => { sel.innerHTML += `<option value="${item}">${item}</option>`; });
+        }
+      } catch(e) { console.error("Error al cargar MiembrosUP:", e); }
+    })
+    .getDropdownData('MiembrosUP');
+
+  // Cargar Facultades
+  google.script.run
+    .withSuccessHandler(dataJson => {
+      try {
+        const list = typeof dataJson === 'string' ? JSON.parse(dataJson) : dataJson;
+        const sel = document.getElementById('facultadReunion');
+        if (sel) {
+          sel.innerHTML = '<option value="">-- Seleccione Facultad --</option>';
+          list.forEach(item => { sel.innerHTML += `<option value="${item}">${item}</option>`; });
+        }
+      } catch(e) { console.error("Error al cargar Facultades:", e); }
+    })
+    .getDropdownData('Facultades');
+}
+
+    function handleUserSearchInput() {
+      clearTimeout(searchDebounceUser);
+      const query = document.getElementById('mainUserSearchInput').value.trim();
+      const resBox = document.getElementById('mainUserSearchResults');
+
+      if (query.length < 3) {
+        resBox.classList.add('hidden');
+        return;
+      }
+
+      searchDebounceUser = setTimeout(() => {
+        resBox.innerHTML = '<div class="p-3 text-xs text-slate-500 text-center">Buscando usuario...</div>';
+        resBox.classList.remove('hidden');
+
+        google.script.run
+          .withSuccessHandler(dataJson => {
+            const users = typeof dataJson === 'string' ? JSON.parse(dataJson) : dataJson;
+            if (!users || users.length === 0) {
+              resBox.innerHTML = '<div class="p-3 text-xs text-slate-500 text-center">No se encontraron usuarios.</div>';
+              return;
+            }
+            let html = '';
+            users.forEach(u => {
+              html += `
+                <div onclick="ConsultaModule.selectMainUser('${u.usuarioID}', '${escapeQuotes(u.nombreCompleto)}', '${escapeQuotes(u.correoInstitucional)}')" 
+                  class="p-2.5 hover:bg-indigo-50 cursor-pointer border-b border-slate-100 text-xs">
+                  <div class="font-bold text-slate-800">${u.nombreCompleto}</div>
+                  <div class="text-slate-500">${u.correoInstitucional}</div>
+                </div>`;
+            });
+            resBox.innerHTML = html;
+          })
+          .searchUsuarios(query);
+      }, 300);
+    }
+
+    function selectMainUser(id, nombre, correo) {
+      document.getElementById('usuarioID').value = id;
+      document.getElementById('mainUserNameDisplay').textContent = nombre;
+      document.getElementById('mainUserEmailDisplay').textContent = `(${correo})`;
+
+      document.getElementById('userSearchBox').classList.add('hidden');
+      document.getElementById('mainUserSelectedBadge').classList.remove('hidden');
+      document.getElementById('mainUserSearchResults').classList.add('hidden');
+    }
+
+    function clearMainUser() {
+      document.getElementById('usuarioID').value = '';
+      document.getElementById('mainUserSearchInput').value = '';
+      document.getElementById('userSearchBox').classList.remove('hidden');
+      document.getElementById('mainUserSelectedBadge').classList.add('hidden');
+    }
+
+    function handlePartSearchInput() {
+      clearTimeout(searchDebouncePart);
+      const query = document.getElementById('partSearchInput').value.trim();
+      const resBox = document.getElementById('partSearchResults');
+
+      if (query.length < 3) {
+        resBox.classList.add('hidden');
+        return;
+      }
+
+      searchDebouncePart = setTimeout(() => {
+        resBox.innerHTML = '<div class="p-3 text-xs text-slate-500 text-center">Buscando participante...</div>';
+        resBox.classList.remove('hidden');
+
+        google.script.run
+          .withSuccessHandler(dataJson => {
+            const users = typeof dataJson === 'string' ? JSON.parse(dataJson) : dataJson;
+            if (!users || users.length === 0) {
+              resBox.innerHTML = '<div class="p-3 text-xs text-slate-500 text-center">No se encontraron usuarios.</div>';
+              return;
+            }
+            let html = '';
+            users.forEach(u => {
+              html += `
+                <div onclick="ConsultaModule.addParticipant('${u.usuarioID}', '${escapeQuotes(u.nombreCompleto)}')" 
+                  class="p-2.5 hover:bg-amber-50 cursor-pointer border-b border-slate-100 text-xs">
+                  <div class="font-bold text-slate-800">${u.nombreCompleto}</div>
+                  <div class="text-slate-500">${u.correoInstitucional}</div>
+                </div>`;
+            });
+            resBox.innerHTML = html;
+          })
+          .searchUsuarios(query);
+      }, 300);
+    }
+
+    function addParticipant(id, nombre) {
+      if (participantesList.some(p => p.id === id)) {
+        alert("El participante ya se encuentra agregado.");
+        return;
+      }
+      participantesList.push({ id, nombre });
+      renderParticipantChips();
+      document.getElementById('partSearchInput').value = '';
+      document.getElementById('partSearchResults').classList.add('hidden');
+    }
+
+    function removeParticipant(id) {
+      participantesList = participantesList.filter(p => p.id !== id);
+      renderParticipantChips();
+    }
+
+    function renderParticipantChips() {
+      const container = document.getElementById('participantesChips');
+      if (participantesList.length === 0) {
+        container.innerHTML = '<span class="text-xs text-slate-400 italic">No hay participantes agregados.</span>';
+        return;
+      }
+      let html = '';
+      participantesList.forEach(p => {
+        html += `
+          <span class="inline-flex items-center gap-1.5 px-3 py-1 bg-amber-100 border border-amber-300 text-amber-900 rounded-full text-xs font-medium">
+            <i class="fas fa-user-tag text-amber-600"></i> ${p.nombre}
+            <button type="button" onclick="ConsultaModule.removeParticipant('${p.id}')" class="text-amber-700 hover:text-amber-900 font-bold ml-1">
+              &times;
+            </button>
+          </span>`;
+      });
+      container.innerHTML = html;
+    }
+
+    function handleSubmit(e) {
+      e.preventDefault();
+      const medio = document.getElementById('medioAtencion').value.toLowerCase();
+      const esReunion = (medio === 'reunion' || medio === 'reunión');
+
+      if (!esReunion) {
+        const mainUserId = document.getElementById('usuarioID').value;
+        if (!mainUserId) {
+          showFeedback("Debe seleccionar un Usuario Principal.", "error");
+          return;
+        }
+      } else {
+        if (!participantesList || participantesList.length === 0) {
+          showFeedback("Debe agregar al menos un participante para la reunión.", "error");
+          return;
+        }
+      }
+
+      const form = document.getElementById('consultaForm');
+      const formData = new FormData(form);
+      const payload = Object.fromEntries(formData.entries());
+
+      // Si es reunión, enviar lista de IDs para guardar en la hoja PARTICIPANTES
+      if (esReunion) {
+        payload.participantes = participantesList.map(p => p.id);
+      }
+
+      const btn = document.getElementById('btnSaveConsulta');
+      btn.disabled = true;
+      btn.classList.add('opacity-50');
+
+      showFeedback("Registrando en la base de datos...", "info");
+
+      google.script.run
+        .withSuccessHandler(res => {
+          btn.disabled = false;
+          btn.classList.remove('opacity-50');
+          if (res && res.success) {
+            showFeedback(res.message, "success");
+            setTimeout(() => loadView('SeleccionAtencion', {}, null), 1200);
+          } else {
+            showFeedback(res ? res.message : "Error de registro.", "error");
+          }
+        })
+        .withFailureHandler(err => {
+          btn.disabled = false;
+          btn.classList.remove('opacity-50');
+          showFeedback(`Error: ${err.message}`, "error");
+        })
+        .createConsultaAdministrativa(payload);
+    }
+
+    function showFeedback(msg, type) {
+      const div = document.getElementById('conFeedbackMsg');
+      div.textContent = msg;
+      div.className = 'p-4 rounded-lg text-sm font-medium ';
+      if (type === 'success') div.className += 'bg-green-50 text-green-800 border border-green-200';
+      else if (type === 'error') div.className += 'bg-red-50 text-red-800 border border-red-200';
+      else div.className += 'bg-blue-50 text-blue-800 border border-blue-200';
+      div.classList.remove('hidden');
+    }
+
+    function escapeQuotes(str) {
+      return String(str || '').replace(/'/g, "\\'").replace(/"/g, '&quot;');
+    }
+
+    setTimeout(init, 50);
+
+    return {
+      handleUserSearchInput,
+      selectMainUser,
+      clearMainUser,
+      handlePartSearchInput,
+      addParticipant,
+      removeParticipant,
+      handleSubmit
+    };
+  })();
+</script>

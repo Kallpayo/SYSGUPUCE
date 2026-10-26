@@ -1,0 +1,446 @@
+<!-- ESTILOS ENCAPSULADOS DEL FORMULARIO DE PROGRAMA -->
+<style>
+.form-container-prog { background-color: #ffffff; padding: 2.5rem; border-radius: 12px; box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1); width: 100%; max-width: 850px; margin: 1rem auto; position: relative; }
+.btn-prog { padding: 0.75rem 1.5rem; border-radius: 8px; font-weight: 600; cursor: pointer; transition: all 0.2s ease-in-out; border: none; }
+.btn-prog:hover:not(:disabled) { transform: translateY(-2px); }
+.btn-prog-primary { background-color: #4f46e5; color: #ffffff; }
+.btn-prog-secondary { background-color: #6b7280; color: #ffffff; }
+.btn-prog-new { background-color: #10b981; color: white; padding: 0.5rem 1rem; margin-left: 0.75rem; flex-shrink: 0; }
+.loading-overlay-prog { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(255, 255, 255, 0.8); display: flex; justify-content: center; align-items: center; z-index: 100; border-radius: 12px; }
+.spinner-prog { border: 4px solid #e5e7eb; border-top: 4px solid #4f46e5; border-radius: 50%; width: 45px; height: 45px; animation: spinProg 1s linear infinite; }
+@keyframes spinProg { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+.search-results-prog { border: 1px solid #d1d5db; border-radius: 8px; max-height: 150px; overflow-y: auto; background-color: #fff; position: absolute; width: calc(100% - 110px); z-index: 20; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
+.search-results-prog div { padding: 0.75rem; border-bottom: 1px solid #e5e7eb; cursor: pointer; font-size: 0.875rem; }
+.search-results-prog div:hover { background-color: #eef2ff; }
+.selected-coord-display { background-color: #eef2ff; color: #4338ca; border: 1px solid #c7d2fe; padding: 0.75rem; border-radius: 8px; font-weight: 600; display: flex; justify-content: space-between; align-items: center; }
+.conditional-fields-prog { border: 2px dashed #e2e8f0; padding: 1.5rem; border-radius: 8px; margin-top: 1rem; background-color: #f8fafc; }
+</style>
+
+<!-- MÓDULO SPA: FORMULARIO DE PROGRAMA DE POSGRADO -->
+<div class="max-w-4xl mx-auto bg-white p-6 md:p-8 rounded-xl shadow-md border border-slate-200 relative">
+  
+  <!-- SPINNER DE CARGA -->
+  <div id="loadingOverlayProg" class="absolute inset-0 bg-white/80 backdrop-blur-sm z-50 flex items-center justify-center rounded-xl hidden">
+    <div class="flex flex-col items-center gap-3">
+      <i class="fas fa-circle-notch fa-spin text-4xl text-indigo-600"></i>
+      <span class="text-sm font-semibold text-slate-700">Procesando solicitud...</span>
+    </div>
+  </div>
+
+  <!-- ENCABEZADO Y BOTÓN SALIR -->
+  <div class="flex flex-col sm:flex-row sm:items-center justify-between border-b border-slate-200 pb-5 mb-6 gap-4">
+    <div>
+      <h2 id="progFormTitle" class="text-2xl font-bold text-slate-800 flex items-center gap-2">
+        <i class="fas fa-graduation-cap text-indigo-600"></i> Gestionar Programa de Posgrado
+      </h2>
+      <p id="progFormSubtitle" class="text-sm text-slate-500 mt-1">
+        Completa los detalles de la oferta académica.
+      </p>
+    </div>
+    
+    <!-- BOTÓN SALIR / VOLVER AL DASHBOARD -->
+    <button type="button" onclick="if (typeof goHome === 'function') { goHome(); }" 
+      class="px-3 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition-colors border border-slate-300 self-start sm:self-auto">
+      <i class="fas fa-sign-out-alt"></i> Salir
+    </button>
+  </div>
+
+  <!-- FORMULARIO PRINCIPAL -->
+  <form id="programaForm" class="space-y-6">
+    <input type="hidden" id="progProgramaID" name="programaID">
+    <input type="hidden" id="progCoordinadorID" name="coordinadorID" required>
+
+    <!-- Facultad -->
+    <div>
+      <label for="progFacultad" class="block text-sm font-semibold text-slate-700 mb-1">
+        Facultad <span class="text-red-500">*</span>
+      </label>
+      <select id="progFacultad" name="facultad" required class="w-full rounded-lg border-slate-300 p-2.5 border text-sm bg-white focus:ring-2 focus:ring-indigo-500">
+        <option value="">Seleccione...</option>
+      </select>
+    </div>
+
+    <!-- BÚSQUEDA Y ASIGNACIÓN DE COORDINADOR / PROPONENTE -->
+    <div class="relative">
+      <label for="progSearchCoordinador" class="block text-sm font-semibold text-slate-700 mb-1">
+        Proponente / Responsable Académico <span class="text-red-500">*</span>
+      </label>
+      
+      <div id="progCoordSearchContainer" class="flex items-center gap-2">
+        <div class="relative flex-1">
+          <input type="text" id="progSearchCoordinador" placeholder="Buscar por nombre o correo..." autocomplete="off" 
+            class="w-full rounded-lg border-slate-300 p-2.5 border text-sm focus:ring-2 focus:ring-indigo-500">
+        </div>
+        <button type="button" id="progCreateCoordBtn" 
+          class="px-4 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-sm font-semibold transition-colors flex items-center gap-1.5 shrink-0">
+          <i class="fas fa-plus"></i> Crear
+        </button>
+      </div>
+
+      <!-- Resultados de búsqueda dinámicos -->
+      <div id="progCoordSearchResults" class="absolute left-0 right-0 top-full mt-1 bg-white border border-slate-200 rounded-lg shadow-lg max-h-48 overflow-y-auto z-20 hidden"></div>
+
+      <!-- Coordinador Seleccionado Display -->
+      <div id="progSelectedCoordDisplay" class="hidden mt-2 p-3 bg-indigo-50 border border-indigo-200 rounded-lg flex items-center justify-between">
+        <div class="flex items-center gap-2">
+          <i class="fas fa-user-check text-indigo-600"></i>
+          <span id="progSelectedCoordName" class="text-sm font-bold text-indigo-900"></span>
+        </div>
+        <div class="flex items-center gap-2">
+          <button type="button" id="progEditCoordBtn" class="px-2.5 py-1 bg-amber-500 hover:bg-amber-600 text-white rounded text-xs font-semibold transition-colors">
+            Modificar
+          </button>
+          <button type="button" id="progClearCoordBtn" class="p-1 text-slate-400 hover:text-red-600 transition-colors" title="Cambiar responsable">
+            <i class="fas fa-times-circle text-lg"></i>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Nombre del Programa -->
+    <div>
+      <label for="progNombre" class="block text-sm font-semibold text-slate-700 mb-1">
+        Nombre del Programa <span class="text-red-500">*</span>
+      </label>
+      <input type="text" id="progNombre" name="nombrePrograma" required class="w-full rounded-lg border-slate-300 p-2.5 border text-sm focus:ring-2 focus:ring-indigo-500">
+    </div>
+
+    <!-- Mención y Modalidad -->
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+      <div>
+        <label for="progMencion" class="block text-sm font-semibold text-slate-700 mb-1">Mención (Opcional)</label>
+        <input type="text" id="progMencion" name="mencion" class="w-full rounded-lg border-slate-300 p-2.5 border text-sm focus:ring-2 focus:ring-indigo-500">
+      </div>
+      <div>
+        <label for="progModalidad" class="block text-sm font-semibold text-slate-700 mb-1">
+          Modalidad <span class="text-red-500">*</span>
+        </label>
+        <select id="progModalidad" name="modalidad" required class="w-full rounded-lg border-slate-300 p-2.5 border text-sm bg-white focus:ring-2 focus:ring-indigo-500">
+          <option value="">Seleccione...</option>
+        </select>
+      </div>
+    </div>
+
+    <!-- Duración y Costo -->
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+      <div>
+        <label for="progDuracion" class="block text-sm font-semibold text-slate-700 mb-1">Duración</label>
+        <input type="text" id="progDuracion" name="duracion" placeholder="Ej. 2 años / 4 semestres" class="w-full rounded-lg border-slate-300 p-2.5 border text-sm focus:ring-2 focus:ring-indigo-500">
+      </div>
+      <div>
+        <label for="progCosto" class="block text-sm font-semibold text-slate-700 mb-1">Costo Aproximado ($)</label>
+        <input type="number" step="0.01" id="progCosto" name="costoAproximado" placeholder="Ej. 3500.00" class="w-full rounded-lg border-slate-300 p-2.5 border text-sm focus:ring-2 focus:ring-indigo-500">
+      </div>
+    </div>
+
+    <!-- CAMPOS CONDICIONALES PARA FASE VIGENTE -->
+    <div id="progConditionalFields" class="hidden p-4 bg-slate-50 border-2 border-dashed border-slate-200 rounded-xl space-y-4">
+      <h3 class="text-sm font-bold text-slate-700 border-b pb-2">Información Regulatoria Aprobada</h3>
+      
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div>
+          <label class="block text-xs font-semibold text-slate-700 mb-1">Resolución HCU</label>
+          <input type="text" id="progResolHCU" name="resolucionHCU" class="w-full rounded-lg border-slate-300 p-2 border text-sm">
+        </div>
+        <div>
+          <label class="block text-xs font-semibold text-slate-700 mb-1">Fecha Aprobación HCU</label>
+          <input type="date" id="progFechaHCU" name="fechaAprobacionHCU" class="w-full rounded-lg border-slate-300 p-2 border text-sm">
+        </div>
+        <div>
+          <label class="block text-xs font-semibold text-slate-700 mb-1">Código SNIESE</label>
+          <input type="text" id="progSniese" name="codigoSNIESE" class="w-full rounded-lg border-slate-300 p-2 border text-sm">
+        </div>
+        <div>
+          <label class="block text-xs font-semibold text-slate-700 mb-1">Fecha Aprobación CES</label>
+          <input type="date" id="progFechaCES" name="fechaAprobacionCES" class="w-full rounded-lg border-slate-300 p-2 border text-sm">
+        </div>
+        <div>
+          <label class="block text-xs font-semibold text-slate-700 mb-1">Vigencia Hasta</label>
+          <input type="date" id="progVigencia" name="vigenciaHasta" class="w-full rounded-lg border-slate-300 p-2 border text-sm">
+        </div>
+      </div>
+    </div>
+
+    <!-- BOTÓN DE GUARDADO -->
+    <div class="flex justify-end pt-4 border-t border-slate-200">
+      <button type="submit" id="progSaveBtn" 
+        class="px-6 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-sm font-semibold flex items-center gap-2 shadow-sm transition-colors">
+        <i class="fas fa-save"></i> Guardar Programa
+      </button>
+    </div>
+  </form>
+</div>
+
+<!-- MODAL DE NOTIFICACIÓN SPA CORREGIDO CON TAILWIND -->
+<div id="progNotificationModal" class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+  <div class="bg-white rounded-xl shadow-xl border border-slate-200 max-w-sm w-full p-6 text-center space-y-4">
+    <div id="progNotifyIcon" class="w-12 h-12 bg-indigo-100 text-indigo-600 rounded-full flex items-center justify-center mx-auto text-xl">
+      <i class="fas fa-info-circle"></i>
+    </div>
+    <p id="progNotificationMessage" class="text-sm font-semibold text-slate-800"></p>
+    <div class="flex justify-center pt-2">
+      <button id="progNotifyOkBtn" type="button" class="px-5 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-xs font-semibold transition-colors">
+        Aceptar
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- LÓGICA JAVASCRIPT BLINDADA -->
+<script>
+(function initProgramaForm() {
+  const loading = document.getElementById('loadingOverlayProg');
+  const progForm = document.getElementById('programaForm');
+  const coordIdInput = document.getElementById('progCoordinadorID');
+  const searchInput = document.getElementById('progSearchCoordinador');
+  const resultsDiv = document.getElementById('progCoordSearchResults');
+
+  // RESOLUCIÓN DE ESTADO SPA
+  const state = window.SysgupState || {};
+  const editMode = state.currentMode === 'edit';
+  const idToEdit = state.id || '';
+
+  function toggleLoading(show) { 
+    if (loading) loading.classList.toggle('hidden', !show); 
+  }
+  
+  function showNotify(msg, isSuccess = false) {
+    const modal = document.getElementById('progNotificationModal');
+    const title = document.getElementById('progFormTitle');
+    const icon = document.getElementById('progNotifyIcon');
+
+    if (isSuccess && title) {
+      title.textContent = '¡Programa Guardado!';
+      title.className = 'text-2xl font-bold text-emerald-600 flex items-center gap-2';
+    }
+
+    if (icon) {
+      icon.className = isSuccess 
+        ? 'w-12 h-12 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center mx-auto text-xl'
+        : 'w-12 h-12 bg-indigo-100 text-indigo-600 rounded-full flex items-center justify-center mx-auto text-xl';
+      icon.innerHTML = isSuccess ? '<i class="fas fa-check-circle"></i>' : '<i class="fas fa-info-circle"></i>';
+    }
+
+    document.getElementById('progNotificationMessage').textContent = msg;
+    if (modal) modal.classList.remove('hidden');
+  }
+
+  document.getElementById('progNotifyOkBtn').onclick = () => {
+    const modal = document.getElementById('progNotificationModal');
+    if (modal) modal.classList.add('hidden');
+  };
+
+  function parseDataSafely(d) {
+    if (!d) return [];
+    if (typeof d === 'string') {
+      try { return JSON.parse(d); } catch(e) { return []; }
+    }
+    return Array.isArray(d) ? d : [];
+  }
+
+  function populateSelect(id, data) {
+    const s = document.getElementById(id);
+    if (!s) return;
+    s.innerHTML = '<option value="">Seleccione...</option>';
+    const items = parseDataSafely(data);
+    items.forEach(v => s.add(new Option(v, v)));
+  }
+
+  // --- CARGA INICIAL ROBUSTA Y CONTROLADA ---
+  function loadInitialData() {
+    toggleLoading(true);
+
+    const promiseFacultades = new Promise(resolve => {
+      google.script.run
+        .withSuccessHandler(d => { populateSelect('progFacultad', d); resolve(); })
+        .withFailureHandler(err => { console.error("Error Facultades:", err); resolve(); })
+        .getDropdownData('Facultades');
+    });
+
+    const promiseModalidades = new Promise(resolve => {
+      google.script.run
+        .withSuccessHandler(d => { populateSelect('progModalidad', d); resolve(); })
+        .withFailureHandler(err => { console.error("Error Modalidades:", err); resolve(); })
+        .getDropdownData('Modalidades');
+    });
+
+    Promise.all([promiseFacultades, promiseModalidades]).then(() => {
+      if (editMode && idToEdit) {
+        loadDataForEdit(idToEdit);
+      } else {
+        toggleLoading(false);
+      }
+    });
+  }
+
+  function loadDataForEdit(id) {
+    const title = document.getElementById('progFormTitle');
+    if (title) title.textContent = 'Editar Programa';
+
+    google.script.run
+      .withSuccessHandler(p => {
+        if (p) {
+          document.getElementById('progProgramaID').value = p.programaID || '';
+          document.getElementById('progFacultad').value = p.facultad || '';
+          document.getElementById('progNombre').value = p.nombrePrograma || '';
+          document.getElementById('progMencion').value = p.mencion || '';
+          document.getElementById('progModalidad').value = p.modalidad || '';
+          document.getElementById('progDuracion').value = p.duracion || '';
+          document.getElementById('progCosto').value = p.costoAproximado || '';
+          
+          const isVigente = p.estadoPropuesta === 'Vigente';
+          toggleConditionalFields(isVigente);
+          if (isVigente) {
+            document.getElementById('progResolHCU').value = p.resolucionHCU || '';
+            document.getElementById('progSniese').value = p.codigoSNIESE || '';
+            document.getElementById('progFechaHCU').value = p.fechaAprobacionHCU || '';
+            document.getElementById('progFechaCES').value = p.fechaAprobacionCES || '';
+            document.getElementById('progVigencia').value = p.vigenciaHasta || '';
+          }
+
+          if (p.coordinadorID) selectCoordinator({ coordinadorID: p.coordinadorID, nombreCompleto: 'Cargando...' });
+        }
+        toggleLoading(false);
+      })
+      .withFailureHandler(err => {
+        toggleLoading(false);
+        showNotify("Error al cargar programa para edición: " + err.message);
+      })
+      .obtenerDatosDeProgramaPorID(id);
+  }
+
+  function toggleConditionalFields(show) {
+    const container = document.getElementById('progConditionalFields');
+    if (!container) return;
+    container.classList.toggle('hidden', !show);
+    container.querySelectorAll('input').forEach(i => { i.disabled = !show; });
+  }
+
+  // --- LÓGICA DE COORDINADOR ---
+  let searchTimeout;
+  if (searchInput) {
+    searchInput.oninput = () => {
+      clearTimeout(searchTimeout);
+      const q = searchInput.value.trim();
+      if (q.length < 3) { resultsDiv.classList.add('hidden'); return; }
+      searchTimeout = setTimeout(() => {
+        resultsDiv.innerHTML = '<div class="p-3 text-slate-400 italic text-xs">Buscando...</div>';
+        resultsDiv.classList.remove('hidden');
+        google.script.run
+          .withSuccessHandler(res => {
+            const coords = parseDataSafely(res);
+            resultsDiv.innerHTML = '';
+            if (coords.length === 0) {
+              resultsDiv.innerHTML = '<div class="p-3 text-slate-400 text-xs">No se encontraron coordinadores.</div>';
+              return;
+            }
+            coords.forEach(c => {
+              const div = document.createElement('div');
+              div.className = "p-2.5 hover:bg-indigo-50 cursor-pointer border-b border-slate-100 text-xs text-slate-700";
+              div.textContent = `${c.nombreCompleto || 'Sin nombre'} (${c.correoInstitucional || 'Sin correo'})`;
+              div.onclick = () => selectCoordinator(c);
+              resultsDiv.appendChild(div);
+            });
+          })
+          .searchCoordinadores(q);
+      }, 400);
+    };
+  }
+
+  function selectCoordinator(c) {
+    if (!c) return;
+    coordIdInput.value = c.coordinadorID || '';
+    document.getElementById('progSelectedCoordName').textContent = c.nombreCompleto || c.coordinadorID;
+    document.getElementById('progCoordSearchContainer').classList.add('hidden');
+    document.getElementById('progSelectedCoordDisplay').classList.remove('hidden');
+    resultsDiv.classList.add('hidden');
+
+    if (c.nombreCompleto === 'Cargando...') {
+      google.script.run
+        .withSuccessHandler(data => {
+          document.getElementById('progSelectedCoordName').textContent = data ? data.nombreCompleto : `ID: ${c.coordinadorID}`;
+        })
+        .withFailureHandler(err => {
+          console.error("Error al obtener coordinador:", err);
+          document.getElementById('progSelectedCoordName').textContent = `ID: ${c.coordinadorID}`;
+        })
+        .getCoordinadorById(c.coordinadorID);
+    } 
+  }
+
+  const clearBtn = document.getElementById('progClearCoordBtn');
+  if (clearBtn) {
+    clearBtn.onclick = () => {
+      coordIdInput.value = '';
+      document.getElementById('progSelectedCoordDisplay').classList.add('hidden');
+      document.getElementById('progCoordSearchContainer').classList.remove('hidden');
+      if (searchInput) {
+        searchInput.value = '';
+        searchInput.focus();
+      }
+    };
+  }
+
+  // REDIRECCIONES SPA
+  const createCoordBtn = document.getElementById('progCreateCoordBtn');
+  if (createCoordBtn) {
+    createCoordBtn.onclick = () => {
+      if (typeof loadView === 'function') loadView('CoordinadorForm', { mode: 'add' });
+    };
+  }
+
+  const editCoordBtn = document.getElementById('progEditCoordBtn');
+  if (editCoordBtn) {
+    editCoordBtn.onclick = () => {
+      const selectedId = coordIdInput ? coordIdInput.value : '';
+      if (selectedId && typeof loadView === 'function') {
+        // Establecer explícitamente el estado global para la SPA antes de cargar la vista
+        window.SysgupState = { 
+          currentMode: 'edit', 
+          id: selectedId 
+        };
+        loadView('CoordinadorForm', { mode: 'edit', id: selectedId }, null);
+      } else {
+        alert("Primero debe seleccionar un proponente para poder modificarlo.");
+      }
+    };
+  }
+
+  // SUBMIT PRINCIPAL
+  if (progForm) {
+    progForm.onsubmit = (e) => {
+      e.preventDefault();
+      if (!coordIdInput.value) { 
+        showNotify('Debe asignar un responsable académico antes de continuar.'); 
+        return; 
+      }
+
+      toggleLoading(true);
+      const data = Object.fromEntries(new FormData(progForm));
+      if (!data.programaID) data.estadoPropuesta = 'Registro';
+
+      const action = data.programaID ? 'updateProgramaPosgrado' : 'createProgramaPosgrado';
+
+      google.script.run
+        .withSuccessHandler(res => {
+          toggleLoading(false);
+          if (res && res.success) {
+            showNotify('El programa ha sido registrado/actualizado con éxito.', true);
+            const saveBtn = document.getElementById('progSaveBtn');
+            if (saveBtn) saveBtn.disabled = true;
+            progForm.classList.add('opacity-50', 'pointer-events-none');
+            document.getElementById('progFormSubtitle').textContent = 'La operación finalizó correctamente en el sistema.';
+          } else {
+            showNotify('Atención: ' + (res ? res.message : 'Error desconocido al procesar.'));
+          }
+        })
+        .withFailureHandler(err => {
+          toggleLoading(false);
+          showNotify('Error en el servidor: ' + err.message);
+        })[action](data);
+    };
+  }
+
+  loadInitialData();
+})();
+</script>

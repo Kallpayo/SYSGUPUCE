@@ -1,0 +1,330 @@
+<style>
+.form-container-mod { background-color: #ffffff; padding: 2.5rem; border-radius: 12px; box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1); width: 100%; max-width: 900px; position: relative; margin: 1rem auto; }
+.search-results-mod { border: 1px solid #d1d5db; border-radius: 8px; max-height: 150px; overflow-y: auto; background-color: #fff; position: absolute; width: calc(100% - 110px); z-index: 20; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
+.search-results-mod div { padding: 0.75rem; border-bottom: 1px solid #e5e7eb; cursor: pointer; font-size: 0.875rem; }
+.search-results-mod div:hover { background-color: #eef2ff; }
+.selected-coord-display-mod { background-color: #eef2ff; color: #4338ca; border: 1px solid #c7d2fe; padding: 0.75rem; border-radius: 8px; font-weight: 600; display: flex; justify-content: space-between; align-items: center; }
+.loading-overlay-mod { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(255, 255, 255, 0.85); display: flex; justify-content: center; align-items: center; z-index: 100; border-radius: 12px; }
+.spinner-mod { border: 4px solid #e5e7eb; border-top: 4px solid #4f46e5; border-radius: 50%; width: 45px; height: 45px; animation: spinMod 1s linear infinite; }
+@keyframes spinMod { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+
+/* ESTILOS DEL MODAL SPA EN OVERLAY FLOTANTE */
+.modal-overlay-spa { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background-color: rgba(15, 23, 42, 0.6); backdrop-filter: blur(4px); display: none; justify-content: center; align-items: center; z-index: 9999; }
+.modal-overlay-spa.show { display: flex !important; }
+.modal-content-spa { background: #ffffff; padding: 2rem; border-radius: 12px; box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1); max-width: 420px; width: 90%; text-align: center; }
+</style>
+
+<div class="form-container-mod" id="modMainCard">
+  <div id="loadingOverlayMod" class="loading-overlay-mod" style="display: none;">
+    <div class="spinner-mod"></div>
+  </div>
+
+  <!-- ENCABEZADO PRINCIPAL CON ACCIONES DE SALIDA -->
+  <header class="flex flex-col sm:flex-row sm:items-center justify-between border-b border-slate-200 pb-5 mb-8 gap-4">
+    <div>
+      <h2 id="modMainTitle" class="text-3xl font-bold text-gray-800 transition-colors duration-300">Modificar Datos del Programa</h2>
+      <p id="modMainSubtitle" class="mt-1 text-gray-500 text-sm">Edita información del programa y el responsable académico asignado.</p>
+    </div>
+    <div class="flex items-center gap-2">
+      <button type="button" onclick="if (typeof loadView === 'function') { loadView('ObservacionesForm', {}); }" class="px-3 py-2 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition-colors border border-indigo-200">
+        <i class="fas fa-arrow-left"></i> Volver a Seguimiento
+      </button>
+      <button type="button" onclick="if (typeof goHome === 'function') { goHome(); }" class="px-3 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition-colors border border-slate-300">
+        <i class="fas fa-sign-out-alt"></i> Salir al Inicio
+      </button>
+    </div>
+  </header>
+
+  <!-- 1. SELECCIÓN DE CONTEXTO (Solo visible si no viene un ID directo) -->
+  <div id="modSelectorContainer" class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8 p-6 bg-gray-50 rounded-lg border">
+    <div>
+      <label class="block text-sm font-medium text-gray-700 mb-1">1. Seleccione Facultad</label>
+      <select id="modFacultadSelect" class="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 p-2 border bg-white text-sm">
+        <option value="">Cargando facultades...</option>
+      </select>
+    </div>
+    <div>
+      <label class="block text-sm font-medium text-gray-700 mb-1">2. Seleccione Programa</label>
+      <select id="modProgramaSelect" class="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 p-2 border bg-white text-sm" disabled>
+        <option value="">Seleccione facultad primero</option>
+      </select>
+    </div>
+  </div>
+
+  <!-- 2. FORMULARIO DE EDICIÓN -->
+  <form id="modFormPrograma" class="hidden space-y-6">
+    <input type="hidden" id="modProgramaID" name="programaID">
+
+    <!-- BÚSQUEDA DE COORDINADOR -->
+    <div class="relative">
+      <label class="block text-sm font-medium text-gray-700 mb-1">
+        Coordinador / Responsable Académico
+        <span class="text-xs text-gray-500 font-normal ml-1">(Debe estar registrado previamente)</span>
+      </label>
+      <input type="hidden" id="modCoordinadorID" name="coordinadorID">
+
+      <div id="modCoordSearchContainer" class="flex items-center mt-1">
+        <input type="text" id="modSearchCoordinador" placeholder="Buscar por nombre o correo..." autocomplete="off" class="block w-full rounded-l-md border-gray-300 shadow-sm focus:border-indigo-500 p-2 border text-sm">
+        <button type="button" id="modCreateCoordBtn" class="bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded-r-md font-bold text-sm transition-colors">Crear</button>
+      </div>
+
+      <div id="modCoordSearchResults" class="search-results-mod hidden"></div>
+
+      <div id="modSelectedCoordDisplay" class="hidden mt-2 selected-coord-display-mod">
+        <span id="modSelectedCoordName" class="flex-grow text-sm"></span>
+        <button type="button" id="modClearCoordBtn" class="bg-gray-500 hover:bg-gray-600 text-white text-xs px-3 py-1 rounded transition-colors ml-4">Cambiar</button>
+      </div>
+    </div>
+
+    <!-- DATOS BÁSICOS DEL PROGRAMA -->
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+      <div><label class="block text-sm font-medium text-gray-700">Nombre del Programa</label><input type="text" id="modNombrePrograma" name="nombrePrograma" class="mt-1 block w-full rounded-md border-gray-300 bg-gray-100 p-2 border text-sm" readonly></div>
+      <div><label class="block text-sm font-medium text-gray-700">Estado Propuesta</label><input type="text" id="modEstadoPropuesta" name="estadoPropuesta" class="mt-1 block w-full rounded-md border-gray-300 bg-gray-100 p-2 border text-sm" readonly></div>
+      <div><label class="block text-sm font-medium text-gray-700">Mención</label><input type="text" id="modMencion" name="mencion" class="mt-1 block w-full rounded-md border-gray-300 p-2 border text-sm"></div>
+      <div><label class="block text-sm font-medium text-gray-700">Modalidad</label><select id="modModalidad" name="modalidad" class="mt-1 block w-full rounded-md border-gray-300 p-2 border text-sm bg-white"></select></div>
+      <div><label class="block text-sm font-medium text-gray-700">Duración</label><input type="text" id="modDuracion" name="duracion" class="mt-1 block w-full rounded-md border-gray-300 p-2 border text-sm"></div>
+      <div><label class="block text-sm font-medium text-gray-700">Costo Aproximado (\$)</label><input type="number" step="0.01" id="modCosto" name="costoAproximado" class="mt-1 block w-full rounded-md border-gray-300 p-2 border text-sm"></div>
+    </div>
+
+    <!-- HITOS REGULATORIOS -->
+    <div class="bg-indigo-50/50 p-6 rounded-xl border border-indigo-100 grid grid-cols-1 md:grid-cols-2 gap-6">
+      <div class="md:col-span-2"><h4 class="text-indigo-800 font-bold text-sm uppercase tracking-wider">Hitos de Aprobación Institucional</h4></div>
+      <div><label class="block text-sm font-medium text-gray-700">Resolución HCU</label><input type="text" id="modResolHCU" name="resolucionHCU" class="mt-1 block w-full rounded-md border-gray-300 p-2 border text-sm"></div>
+      <div><label class="block text-sm font-medium text-gray-700">Fecha HCU</label><input type="date" id="modFechaHCU" name="fechaAprobacionHCU" class="mt-1 block w-full rounded-md border-gray-300 p-2 border text-sm"></div>
+      <div><label class="block text-sm font-medium text-gray-700">Resolución CES</label><input type="text" id="modResolCES" name="resolucionCES" class="mt-1 block w-full rounded-md border-gray-300 p-2 border text-sm"></div>
+      <div><label class="block text-sm font-medium text-gray-700">Fecha CES</label><input type="date" id="modFechaCES" name="fechaAprobacionCES" class="mt-1 block w-full rounded-md border-gray-300 p-2 border text-sm"></div>
+      <div><label class="block text-sm font-medium text-gray-700">Código SNIESE</label><input type="text" id="modSniese" name="codigoSNIESE" class="mt-1 block w-full rounded-md border-gray-300 p-2 border text-sm"></div>
+      <div><label class="block text-sm font-medium text-gray-700">Vigencia Hasta</label><input type="date" id="modVigencia" name="vigenciaHasta" class="mt-1 block w-full rounded-md border-gray-300 p-2 border text-sm"></div>
+    </div>
+
+    <div class="flex justify-end gap-4 pt-4 border-t">
+      <button type="submit" id="modSaveBtn" class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2.5 px-8 rounded-lg transition-all shadow-sm">Guardar Cambios</button>
+    </div>
+  </form>
+</div>
+
+<!-- MODAL DE NOTIFICACIÓN SPA CORREGIDO -->
+<div id="modNotificationModal" class="modal-overlay-spa">
+  <div class="modal-content-spa">
+    <p id="modNotificationMessage" class="text-base font-semibold text-gray-800 mb-4"></p>
+    <div class="flex justify-center">
+      <button id="modNotifyOkBtn" class="bg-indigo-600 text-white py-2 px-8 rounded-lg font-bold text-sm hover:bg-indigo-700">Aceptar</button>
+    </div>
+  </div>
+</div>
+
+<script>
+(function initModificaForm() {
+  const loading = document.getElementById('loadingOverlayMod');
+  const modForm = document.getElementById('modFormPrograma');
+  const coordIdInput = document.getElementById('modCoordinadorID');
+  const selectedCoordName = document.getElementById('modSelectedCoordName');
+  const coordResults = document.getElementById('modCoordSearchResults');
+
+  const state = window.SysgupState || {};
+  const programaIdToEdit = state.id || '';
+  let isLastSaveSuccess = false;
+
+  function safeParseJSON(data) {
+    if (!data) return [];
+    if (typeof data === 'string') {
+      try { return JSON.parse(data); } catch(e) { return []; }
+    }
+    return Array.isArray(data) ? data : [];
+  }
+
+  function toggleLoading(show) {
+    if (loading) loading.style.display = show ? 'flex' : 'none';
+  }
+
+  function showNotify(msg, isSuccess = false) {
+    isLastSaveSuccess = isSuccess;
+    const title = document.getElementById('modMainTitle');
+    if (isSuccess && title) {
+      title.textContent = '¡Cambios Guardados!';
+      title.className = 'text-3xl font-bold text-green-600 transition-colors duration-300';
+    }
+    document.getElementById('modNotificationMessage').textContent = msg;
+    const modal = document.getElementById('modNotificationModal');
+    if (modal) modal.classList.add('show');
+  }
+
+  const okBtn = document.getElementById('modNotifyOkBtn');
+  if (okBtn) {
+    okBtn.onclick = function() {
+      const modal = document.getElementById('modNotificationModal');
+      if (modal) modal.classList.remove('show');
+
+      // Si el guardado fue exitoso, restaurar interactividad y permitir volver a seguimiento
+      if (isLastSaveSuccess) {
+        const saveBtn = document.getElementById('modSaveBtn');
+        if (saveBtn) saveBtn.disabled = false;
+        modForm.classList.remove('opacity-50', 'pointer-events-none');
+        if (typeof loadView === 'function') {
+          loadView('ObservacionesForm', { id: programaIdToEdit });
+        }
+      }
+    };
+  }
+
+  function loadInitialData() {
+    toggleLoading(true);
+
+    const promises = [
+      new Promise(res => google.script.run.withSuccessHandler(data => { populateSelect('modFacultadSelect', safeParseJSON(data)); res(); }).getDropdownData('Facultades')),
+      new Promise(res => google.script.run.withSuccessHandler(data => { populateSelect('modModalidad', safeParseJSON(data)); res(); }).getDropdownData('Modalidades'))
+    ];
+
+    Promise.all(promises).then(() => {
+      if (programaIdToEdit) {
+        document.getElementById('modSelectorContainer').classList.add('hidden');
+        google.script.run.withSuccessHandler(p => {
+          populateFormMod(p);
+          toggleLoading(false);
+        }).obtenerDatosDeProgramaPorID(programaIdToEdit);
+      } else {
+        toggleLoading(false);
+      }
+    });
+  }
+
+  function populateFormMod(programa) {
+    if (!programa) return;
+    document.getElementById('modProgramaID').value = programa.programaID;
+    document.getElementById('modNombrePrograma').value = programa.nombrePrograma;
+    document.getElementById('modEstadoPropuesta').value = programa.estadoPropuesta;
+    document.getElementById('modMencion').value = programa.mencion || '';
+    document.getElementById('modModalidad').value = programa.modalidad || '';
+    document.getElementById('modDuracion').value = programa.duracion || '';
+    document.getElementById('modCosto').value = programa.costoAproximado || '';
+    document.getElementById('modResolHCU').value = programa.resolucionHCU || '';
+    document.getElementById('modResolCES').value = programa.resolucionCES || '';
+    document.getElementById('modSniese').value = programa.codigoSNIESE || '';
+
+    document.getElementById('modFechaHCU').value = formatToDateInput(programa.fechaAprobacionHCU);
+    document.getElementById('modFechaCES').value = formatToDateInput(programa.fechaAprobacionCES);
+    document.getElementById('modVigencia').value = formatToDateInput(programa.vigenciaHasta);
+
+    if (programa.coordinadorID) {
+      coordIdInput.value = programa.coordinadorID;
+      selectedCoordName.textContent = 'Cargando responsable...';
+      document.getElementById('modCoordSearchContainer').classList.add('hidden');
+      document.getElementById('modSelectedCoordDisplay').classList.remove('hidden');
+
+      google.script.run.withSuccessHandler(c => {
+        selectedCoordName.textContent = c ? `${c.nombreCompleto} (${c.correoInstitucional})` : `ID: ${programa.coordinadorID}`;
+      }).getCoordinadorById(programa.coordinadorID);
+    }
+
+    modForm.classList.remove('hidden');
+  }
+
+  document.getElementById('modFacultadSelect').onchange = function() {
+    const fac = this.value;
+    const progSel = document.getElementById('modProgramaSelect');
+    progSel.innerHTML = '<option>Cargando programas...</option>';
+    progSel.disabled = true;
+
+    google.script.run.withSuccessHandler(data => {
+      const progs = safeParseJSON(data);
+      progSel.innerHTML = '<option value="">-- Seleccione Programa --</option>';
+      progs.forEach(p => progSel.add(new Option(p.nombrePrograma, p.programaID)));
+      progSel.disabled = false;
+    }).getProgramasByFacultad(fac);
+  };
+
+  document.getElementById('modProgramaSelect').onchange = function() {
+    if (!this.value) return;
+    toggleLoading(true);
+    google.script.run.withSuccessHandler(p => {
+      populateFormMod(p);
+      toggleLoading(false);
+    }).obtenerDatosDeProgramaPorID(this.value);
+  };
+
+  let searchTimeout;
+  document.getElementById('modSearchCoordinador').oninput = function() {
+    clearTimeout(searchTimeout);
+    const q = this.value.trim();
+    if (q.length < 3) { coordResults.classList.add('hidden'); return; }
+
+    searchTimeout = setTimeout(() => {
+      coordResults.innerHTML = '<div class="p-3 text-gray-400 italic">Buscando...</div>';
+      coordResults.classList.remove('hidden');
+      google.script.run.withSuccessHandler(res => {
+        const coords = safeParseJSON(res);
+        coordResults.innerHTML = '';
+        coords.forEach(c => {
+          const div = document.createElement('div');
+          div.textContent = `${c.nombreCompleto} (${c.correoInstitucional})`;
+          div.onclick = () => {
+            coordIdInput.value = c.coordinadorID;
+            selectedCoordName.textContent = div.textContent;
+            document.getElementById('modCoordSearchContainer').classList.add('hidden');
+            document.getElementById('modSelectedCoordDisplay').classList.remove('hidden');
+            coordResults.classList.add('hidden');
+          };
+          coordResults.appendChild(div);
+        });
+      }).searchCoordinadores(q);
+    }, 400);
+  };
+
+  document.getElementById('modClearCoordBtn').onclick = () => {
+    coordIdInput.value = '';
+    document.getElementById('modSelectedCoordDisplay').classList.add('hidden');
+    document.getElementById('modCoordSearchContainer').classList.remove('hidden');
+    document.getElementById('modSearchCoordinador').value = '';
+    document.getElementById('modSearchCoordinador').focus();
+  };
+
+  document.getElementById('modCreateCoordBtn').onclick = () => {
+    if (typeof loadView === 'function') {
+      loadView('CoordinadorForm', { mode: 'add' });
+    }
+  };
+
+  modForm.onsubmit = (e) => {
+    e.preventDefault();
+    if (!coordIdInput.value) {
+      showNotify('Debe asignar un responsable académico.', false);
+      return;
+    }
+    toggleLoading(true);
+    const data = Object.fromEntries(new FormData(modForm));
+
+    google.script.run
+      .withSuccessHandler(res => {
+        toggleLoading(false);
+        if (res && res.success) {
+          showNotify('La información regulatoria ha sido actualizada correctamente.', true);
+        } else {
+          showNotify('Error al guardar: ' + (res ? res.message : 'Error en el servidor'), false);
+        }
+      })
+      .withFailureHandler(err => {
+        toggleLoading(false);
+        showNotify('Error en el servidor: ' + err.message, false);
+      })
+      .updateProgramaPosgrado(data);
+  };
+
+  function populateSelect(id, data) {
+    const s = document.getElementById(id);
+    if (!s) return;
+    s.innerHTML = '<option value="">-- Seleccione --</option>';
+    data.forEach(v => s.add(new Option(v, v)));
+  }
+
+  function formatToDateInput(str) {
+    if (!str) return '';
+    if (str.includes('/')) {
+      const p = str.split('/');
+      if (p.length === 3) return `${p}-${p.padStart(2,'0')}-${p.padStart(2,'0')}`;
+    }
+    return str;
+  }
+
+  loadInitialData();
+})();
+</script>
