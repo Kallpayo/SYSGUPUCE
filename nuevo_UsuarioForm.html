@@ -1,0 +1,389 @@
+<!-- MÓDULO SPA: GESTIÓN DE USUARIOS  -->
+<div class="max-w-6xl mx-auto bg-white p-6 md:p-8 rounded-xl shadow-md border border-slate-200">
+  
+  <!-- Encabezado del Módulo -->
+  <div class="flex flex-col md:flex-row md:items-center justify-between border-b border-slate-200 pb-5 mb-6 gap-4">
+    <div>
+      <h2 class="text-2xl font-bold text-slate-800 flex items-center gap-2">
+        <i class="fas fa-users-cog text-indigo-600"></i> Gestión de Usuarios
+      </h2>
+      <p class="text-sm text-slate-500 mt-1">
+        Consulte, registre y actualice los datos de Usuarios.
+      </p>
+    </div>
+    
+    <!-- Switcher / Estado de Modo -->
+    <div class="flex items-center gap-2 bg-slate-100 p-1.5 rounded-lg text-sm">
+      <button type="button" id="btnModeCreate" onclick="UsuarioModule.switchMode('create')"
+        class="px-3 py-1.5 rounded-md font-medium transition-colors bg-indigo-600 text-white shadow-sm">
+        Nuevo Usuario
+      </button>
+      <button type="button" id="btnModeSearch" onclick="UsuarioModule.switchMode('search')"
+        class="px-3 py-1.5 rounded-md font-medium text-slate-600 hover:text-slate-900 transition-colors">
+        Buscar / Editar
+      </button>
+    </div>
+  </div>
+
+  <!-- Contenedor Principal de Modos -->
+  
+  <!-- SECCIÓN 1: BÚSQUEDA Y SELECCIÓN (Modo Buscar) -->
+  <div id="usuarioSearchSection" class="hidden mb-8 p-5 bg-slate-50 rounded-lg border border-slate-200">
+    <label class="block text-sm font-semibold text-slate-700 mb-2">
+      Buscar Usuario por Nombre, ID o Correo
+    </label>
+    <div class="relative">
+      <input type="text" id="usrSearchInput" oninput="UsuarioModule.handleSearchInput()" 
+        placeholder="Ingrese al menos 3 caracteres..."
+        class="w-full pl-10 pr-4 py-2.5 rounded-lg border border-slate-300 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 text-sm">
+      <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400">
+        <i class="fas fa-search"></i>
+      </div>
+    </div>
+
+    <!-- Resultados de Búsqueda -->
+    <div id="usrSearchResults" class="mt-3 max-h-60 overflow-y-auto divide-y divide-slate-200 bg-white border border-slate-200 rounded-lg hidden">
+      <!-- Se puebla dinámicamente -->
+    </div>
+  </div>
+
+  <!-- SECCIÓN 2: FORMULARIO PRINCIPAL -->
+  <form id="usuarioForm" onsubmit="UsuarioModule.handleSubmit(event)" class="space-y-6">
+    <input type="hidden" id="usrId" name="usuarioID" value="">
+
+    <!-- Indicador de ID actual -->
+    <div id="usrIdBadgeContainer" class="hidden flex items-center justify-between p-3 bg-indigo-50 border border-indigo-200 rounded-lg">
+      <span class="text-xs font-semibold text-indigo-700 uppercase tracking-wider">
+        Editando Usuario ID: <strong id="usrIdBadgeDisplay" class="text-sm text-indigo-900">SYS-0000</strong>
+      </span>
+      <button type="button" onclick="UsuarioModule.resetForm()" class="text-xs text-indigo-600 hover:text-indigo-800 font-medium underline">
+        Cancelar edición
+      </button>
+    </div>
+
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+      
+      <!-- Nombre Completo -->
+      <div class="md:col-span-2">
+        <label class="block text-sm font-semibold text-slate-700 mb-1">
+          Nombre Completo <span class="text-red-500">*</span>
+        </label>
+        <input type="text" id="usrNombreCompleto" name="nombreCompleto" required
+          class="w-full rounded-lg border-slate-300 p-2.5 border focus:ring-2 focus:ring-indigo-500 text-sm">
+      </div>
+
+      <!-- Correo Institucional -->
+      <div>
+        <label class="block text-sm font-semibold text-slate-700 mb-1">
+          Correo Institucional <span class="text-red-500">*</span>
+        </label>
+        <input type="email" id="usrCorreo" name="correoInstitucional" required
+          class="w-full rounded-lg border-slate-300 p-2.5 border focus:ring-2 focus:ring-indigo-500 text-sm">
+      </div>
+
+      <!-- [ELIMINADO LOPDP #6] Campo Teléfono de Contacto retirado del formulario -->
+
+      <!-- Género -->
+      <div>
+        <label class="block text-sm font-semibold text-slate-700 mb-1">Género</label>
+        <select id="usrGenero" name="genero" class="w-full rounded-lg border-slate-300 p-2.5 border focus:ring-2 focus:ring-indigo-500 text-sm bg-white">
+          
+        </select>
+      </div>
+
+      <!-- Cargo -->
+      <div>
+        <label class="block text-sm font-semibold text-slate-700 mb-1">Cargo / Ocupación</label>
+        <select id="usrCargo" name="cargo" class="w-full rounded-lg border-slate-300 p-2.5 border focus:ring-2 focus:ring-indigo-500 text-sm bg-white">
+        </select>
+      </div>
+
+      <!-- Facultad / Dependencia -->
+      <div class="md:col-span-2">
+        <label class="block text-sm font-semibold text-slate-700 mb-1">Facultad / Unidad / Dependencia</label>
+        <select id="usrFacultad" name="facultad" class="w-full rounded-lg border-slate-300 p-2.5 border focus:ring-2 focus:ring-indigo-500 text-sm bg-white">
+        </select>
+      </div>
+    </div>
+
+    <!-- Mensaje de Feedback -->
+    <div id="usrFeedbackMsg" class="hidden p-4 rounded-lg text-sm font-medium"></div>
+
+    <!-- Acciones del Formulario -->
+    <div class="flex items-center justify-between border-t border-slate-200 pt-5 gap-4">
+      <button type="button" id="btnDeleteUser" onclick="UsuarioModule.deleteUser()" class="hidden px-4 py-2 bg-red-50 text-red-700 hover:bg-red-100 rounded-lg text-sm font-medium transition-colors">
+        <i class="fas fa-trash-alt mr-1"></i> Eliminar Usuario
+      </button>
+      <div class="flex items-center gap-3 ml-auto">
+        <button type="button" onclick="UsuarioModule.resetForm()" class="px-4 py-2 border border-slate-300 text-slate-700 hover:bg-slate-50 rounded-lg text-sm font-medium transition-colors">
+          Limpiar
+        </button>
+        <button type="submit" id="btnSaveUser" class="px-6 py-2 bg-indigo-600 text-white hover:bg-indigo-700 rounded-lg text-sm font-medium shadow-sm transition-colors flex items-center gap-2">
+          <i class="fas fa-save"></i> <span id="btnSaveUserText">Guardar Usuario</span>
+        </button>
+      </div>
+    </div>
+  </form>
+</div>
+
+<!-- LÓGICA JAVASCRIPT DEL MÓDULO DE USUARIOS -->
+<script>
+  window.UsuarioModule = (function() {
+    let currentMode = 'create';
+    let searchDebounce = null;
+
+    function switchMode(mode) {
+      currentMode = mode;
+      const btnCreate = document.getElementById('btnModeCreate');
+      const btnSearch = document.getElementById('btnModeSearch');
+      const searchSec = document.getElementById('usuarioSearchSection');
+
+      if (mode === 'create') {
+        btnCreate.className = 'px-3 py-1.5 rounded-md font-medium transition-colors bg-indigo-600 text-white shadow-sm';
+        btnSearch.className = 'px-3 py-1.5 rounded-md font-medium text-slate-600 hover:text-slate-900 transition-colors';
+        searchSec.classList.add('hidden');
+        resetForm();
+      } else {
+        btnSearch.className = 'px-3 py-1.5 rounded-md font-medium transition-colors bg-indigo-600 text-white shadow-sm';
+        btnCreate.className = 'px-3 py-1.5 rounded-md font-medium text-slate-600 hover:text-slate-900 transition-colors';
+        searchSec.classList.remove('hidden');
+        document.getElementById('usrSearchInput').focus();
+      }
+    }
+
+    function handleSearchInput() {
+      clearTimeout(searchDebounce);
+      const query = document.getElementById('usrSearchInput').value.trim();
+      const resultsDiv = document.getElementById('usrSearchResults');
+
+      if (query.length < 3) {
+        resultsDiv.classList.add('hidden');
+        resultsDiv.innerHTML = '';
+        return;
+      }
+
+      searchDebounce = setTimeout(() => {
+        resultsDiv.innerHTML = '<div class="p-3 text-xs text-slate-500 text-center">Buscando usuarios...</div>';
+        resultsDiv.classList.remove('hidden');
+
+        google.script.run
+          .withSuccessHandler(renderSearchResults)
+          .withFailureHandler(err => {
+            resultsDiv.innerHTML = `<div class="p-3 text-xs text-red-500 text-center">Error: ${err.message}</div>`;
+          })
+          .searchUsuarios(query);
+      }, 300);
+    }
+
+    function renderSearchResults(dataJson) {
+      const resultsDiv = document.getElementById('usrSearchResults');
+      const users = typeof dataJson === 'string' ? JSON.parse(dataJson) : dataJson;
+
+      if (!users || users.length === 0) {
+        resultsDiv.innerHTML = '<div class="p-3 text-xs text-slate-500 text-center">No se encontraron usuarios coincidentes.</div>';
+        return;
+      }
+
+      let html = '';
+      users.forEach(u => {
+        html += `
+          <div onclick="UsuarioModule.selectUser('${u.usuarioID}')" class="p-3 hover:bg-indigo-50 cursor-pointer transition-colors flex justify-between items-center text-sm">
+            <div>
+              <div class="font-semibold text-slate-800">${u.nombreCompleto}</div>
+              <div class="text-xs text-slate-500">${u.correoInstitucional} • ${u.facultad || 'Sin Facultad'}</div>
+            </div>
+            <span class="text-xs bg-slate-100 text-slate-600 px-2 py-1 rounded border font-mono">${u.usuarioID}</span>
+          </div>
+        `;
+      });
+      resultsDiv.innerHTML = html;
+    }
+
+    function selectUser(usuarioID) {
+      showFeedback('Cargando datos del usuario...', 'info');
+      
+      google.script.run
+        .withSuccessHandler(dataJson => {
+          const users = typeof dataJson === 'string' ? JSON.parse(dataJson) : dataJson;
+          const user = Array.isArray(users) ? users.find(u => u.usuarioID === usuarioID) : users;
+
+          if (!user) {
+            showFeedback('No se pudo cargar la información del usuario.', 'error');
+            return;
+          }
+
+          document.getElementById('usrId').value = user.usuarioID || '';
+          document.getElementById('usrNombreCompleto').value = user.nombreCompleto || '';
+          document.getElementById('usrCorreo').value = user.correoInstitucional || '';
+          // [ELIMINADO LOPDP #6] ya no se carga telefonoContacto
+          document.getElementById('usrGenero').value = user.genero || '';
+          document.getElementById('usrCargo').value = user.cargo || '';
+          document.getElementById('usrFacultad').value = user.facultad || '';
+
+          document.getElementById('usrIdBadgeDisplay').textContent = user.usuarioID;
+          document.getElementById('usrIdBadgeContainer').classList.remove('hidden');
+          document.getElementById('btnSaveUserText').textContent = 'Actualizar Usuario';
+          document.getElementById('btnDeleteUser').classList.remove('hidden');
+          document.getElementById('usrSearchResults').classList.add('hidden');
+
+          hideFeedback();
+        })
+        .withFailureHandler(err => showFeedback(`Error: ${err.message}`, 'error'))
+        .searchUsuarios(usuarioID);
+    }
+
+    function handleSubmit(e) {
+      e.preventDefault();
+      const form = document.getElementById('usuarioForm');
+      const formData = new FormData(form);
+      const payload = Object.fromEntries(formData.entries());
+      // [CORREGIDO Req-3] Normalizar a string y limpiar espacios antes de enviar
+      for (const k in payload) { payload[k] = String(payload[k] === undefined ? '' : payload[k]).trim(); }
+      const isUpdate = !!payload.usuarioID;
+
+      const btn = document.getElementById('btnSaveUser');
+      btn.disabled = true;
+      btn.classList.add('opacity-50');
+
+      showFeedback(isUpdate ? 'Actualizando usuario...' : 'Guardando usuario...', 'info');
+
+      // [CORREGIDO P0-4] 'saveUsuario' no existía en el servidor (el guardado quedaba en stand-by)
+      const serverMethod = isUpdate ? 'updateUsuario' : 'createUsuario';
+
+      google.script.run
+        .withSuccessHandler(res => {
+          btn.disabled = false;
+          btn.classList.remove('opacity-50');
+          
+          if (res && res.success) {
+            // [CORREGIDO Req-3] Feedback inmediato mostrando el ID asignado
+            let msg = res.message || 'Operación realizada exitosamente.';
+            try {
+              if (!isUpdate && res.usuario) {
+                const nuevo = typeof res.usuario === 'string' ? JSON.parse(res.usuario) : res.usuario;
+                if (nuevo && nuevo.usuarioID) msg += ` (ID: ${nuevo.usuarioID})`;
+              }
+            } catch (eParse) { /* si res.usuario no es JSON, se omite el ID */ }
+            showFeedback(msg, 'success');
+            if (!isUpdate) resetForm();
+          } else {
+            showFeedback((res && res.message) ? res.message : 'Ocurrió un problema al procesar.', 'error');
+          }
+        })
+        .withFailureHandler(err => {
+          btn.disabled = false;
+          btn.classList.remove('opacity-50');
+          showFeedback(`Error de conexión: ${err.message}`, 'error');
+        })
+        [serverMethod](payload);
+    }
+
+    function deleteUser() {
+      const id = document.getElementById('usrId').value;
+      if (!id) return;
+
+      if (!confirm(`¿Está seguro de eliminar permanentemente al usuario ${id}?`)) return;
+
+      showFeedback('Eliminando usuario...', 'info');
+
+      google.script.run
+        .withSuccessHandler(res => {
+          if (res && res.success) {
+            showFeedback('Usuario eliminado correctamente.', 'success');
+            resetForm();
+          } else {
+            showFeedback(res ? res.message : 'Error al eliminar.', 'error');
+          }
+        })
+        .withFailureHandler(err => showFeedback(`Error: ${err.message}`, 'error'))
+        .deleteUsuario(id);
+    }
+
+    function resetForm() {
+      document.getElementById('usuarioForm').reset();
+      document.getElementById('usrId').value = '';
+      document.getElementById('usrIdBadgeContainer').classList.add('hidden');
+      document.getElementById('btnSaveUserText').textContent = 'Guardar Usuario';
+      document.getElementById('btnDeleteUser').classList.add('hidden');
+      document.getElementById('usrSearchResults').classList.add('hidden');
+      document.getElementById('usrSearchResults').innerHTML = '';
+      document.getElementById('usrSearchInput').value = '';
+      hideFeedback();
+    }
+
+/**
+ * Carga los catálogos dinámicos para el formulario de Usuarios usando la BDD
+ */
+function loadCatalogosUsuario() {
+  // 1. Cargar Género
+  google.script.run
+    .withSuccessHandler(dataJson => {
+      try {
+        const list = typeof dataJson === 'string' ? JSON.parse(dataJson) : dataJson;
+        const sel = document.getElementById('usrGenero'); // Ajusta el ID según tu HTML
+        if (sel) {
+          sel.innerHTML = '<option value="">-- Seleccione Género --</option>';
+          list.forEach(item => { sel.innerHTML += `<option value="${item}">${item}</option>`; });
+        }
+      } catch(e) { console.error("Error cargando Generos:", e); }
+    })
+    .getDropdownData('Generos');
+
+  // 2. Cargar Cargo
+  google.script.run
+    .withSuccessHandler(dataJson => {
+      try {
+        const list = typeof dataJson === 'string' ? JSON.parse(dataJson) : dataJson;
+        const sel = document.getElementById('usrCargo'); // Ajusta el ID según tu HTML
+        if (sel) {
+          sel.innerHTML = '<option value="">-- Seleccione Cargo --</option>';
+          list.forEach(item => { sel.innerHTML += `<option value="${item}">${item}</option>`; });
+        }
+      } catch(e) { console.error("Error cargando Cargos:", e); }
+    })
+    .getDropdownData('Cargos');
+
+  // 3. Cargar Facultad
+  google.script.run
+    .withSuccessHandler(dataJson => {
+      try {
+        const list = typeof dataJson === 'string' ? JSON.parse(dataJson) : dataJson;
+        const sel = document.getElementById('usrFacultad'); // Ajusta el ID según tu HTML
+        if (sel) {
+          sel.innerHTML = '<option value="">-- Seleccione Facultad --</option>';
+          list.forEach(item => { sel.innerHTML += `<option value="${item}">${item}</option>`; });
+        }
+      } catch(e) { console.error("Error cargando Facultades:", e); }
+    })
+    .getDropdownData('Facultades');
+}
+
+// Ejecutar automáticamente al cargar la vista
+setTimeout(loadCatalogosUsuario, 50);
+
+
+
+    function showFeedback(msg, type) {
+      const div = document.getElementById('usrFeedbackMsg');
+      div.textContent = msg;
+      div.className = 'p-4 rounded-lg text-sm font-medium ';
+      if (type === 'success') div.className += 'bg-green-50 text-green-800 border border-green-200';
+      else if (type === 'error') div.className += 'bg-red-50 text-red-800 border border-red-200';
+      else div.className += 'bg-blue-50 text-blue-800 border border-blue-200';
+      div.classList.remove('hidden');
+    }
+
+    function hideFeedback() {
+      document.getElementById('usrFeedbackMsg').classList.add('hidden');
+    }
+
+    return {
+      switchMode,
+      handleSearchInput,
+      selectUser,
+      handleSubmit,
+      deleteUser,
+      resetForm
+    };
+  })();
+</script>
