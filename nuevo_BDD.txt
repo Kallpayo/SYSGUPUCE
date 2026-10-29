@@ -1,0 +1,126 @@
+{
+"USUARIO": [
+"UsuarioID",
+"NombreCompleto",
+"CorreoInstitucional",
+"Genero",
+"Cargo",
+"Facultad",
+"FechaRegistro",
+"UltimaActualizacion"
+],
+"CONSULTA": [
+"ConsultaID",
+"UsuarioID",
+"FechaConsulta",
+"HoraVisita",
+"HoraFin",
+"MedioAtencion",
+"TipoConsulta",
+"DetalleConsulta",
+"TipoSolucion",
+"SolucionBrindada",
+"NombreFuncionarioQueAtendio",
+"AgendadaPreviamente",
+"NumeroQuipux",
+"FacultadReunion"
+],
+"PARTICIPANTES": [
+"ParticipanteID",
+"ConsultaID",
+"UsuarioID",
+"Rol"
+],
+"COORDINADOR": [
+"CoordinadorID",
+"NombreCompleto",
+"CorreoInstitucional",
+"Genero",
+"FechaRegistro",
+"UltimaActualizacion"
+],
+"PROGRAMAPOSGRADO": [
+"ProgramaID",
+"Facultad",
+"CoordinadorID",
+"NombrePrograma",
+"Mencion",
+"Modalidad",
+"Duracion",
+"CostoAproximado",
+"EstadoPropuesta",
+"ResolucionHCU",
+"FechaAprobacionHCU",
+"ResolucionCES",
+"FechaAprobacionCES",
+"CodigoSNIESE",
+"VigenciaHasta"
+],
+"OBSERVACIONES": [
+"ObservacionID",
+"ProgramaID",
+"Descripcion",
+"FechaObservacion",
+"FechaCorreccionEsperada",
+"FechaCorreccionRecibida"
+],
+"NOTIFICACION": [
+"NotificacionID",
+"ObservacionID",
+"ProgramaID",
+"CoordinadorID",
+"Tipo",
+"Mensaje",
+"FechaEnvio"
+],
+"COHORTE": [
+"CohorteID",
+"ProgramaID",
+"EstadoCohorte",
+"OrdinalCohorte",
+"FechaInicioInscripcion",
+"FechaFinInscripcion",
+"ContadorInscripciones",
+"PeriodoAcademico",
+"ResolucionHCU",
+"Modalidad",
+"Duracion",
+"FechaInicioMatriculaOrd",
+"FechaFinMatriculaOrd",
+"FechaInicioMatriculaExt",
+"FechaFinMatriculaExt",
+"ContadorMatriculas",
+"FechaInicioClases",
+"FechaFinClases",
+"CoordinadorCohorteID",
+"MecanismosTitulacion"
+],
+"EXTENSIONES_FECHAS": [
+"ExtensionID",
+"CohorteID",
+"TipoExtension",
+"NumeroLlamado",
+"FechaInicio",
+"FechaFin",
+"FechaRegistro"
+],
+"CAMBIOS_PROGRAMA": [
+"CambioID",
+"ProgramaID",
+"TipoCambio",
+"FechaCambio",
+"Descripcion",
+"Anterior",
+"Nuevo",
+"ResolucionCES",
+"ResolucionHCU",
+"NuevaVersion",
+"RegistradoEl"
+],
+"CONFIG": [
+"TipoLista",
+"ValorItem",
+"FaseOrigen",
+"FaseDestino"
+]
+}
