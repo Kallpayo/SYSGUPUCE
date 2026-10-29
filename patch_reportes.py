@@ -5,6 +5,10 @@ raw = io.open('Reportes.html', 'rb').read().decode('utf-8')
 crlf = '\r\n' in raw
 code = raw.replace('\r\n', '\n')
 
+# [FIX] El original tiene lineas con espacios en blanco al final (ej: '</tbody>  ').
+# Normalizamos antes de parchar; las cadenas 'old' del script asumen texto limpio.
+code = '\n'.join(l.rstrip() for l in code.split('\n'))
+
 def apply(old, new, label):
     global code
     assert old in code, "NO ENCONTRADA: " + label
@@ -87,18 +91,13 @@ assert cierre_grilla != -1, "no se hallo cierre de grilla"
 code = code[:cierre_grilla + 1] + TARJETA + code[cierre_grilla + 1:]
 print("OK: tarjeta 4 insertada")
 
-# Insertar seccion actas + modal: despues del cierre de sectionQuipux y antes del </div> final (col 0)
+# Insertar seccion actas + modal: tras el cierre de sectionQuipux (2 lineas despues de quipuxTableBody)
 idx_tbody_q = code.find('<tbody id="quipuxTableBody"')
 assert idx_tbody_q != -1
-i = idx_tbody_q
-while True:
-    i = code.find('\n  </div>\n', i + 1)
-    assert i != -1, "no se hallo cierre de secciones"
-    after = code[i + len('\n  </div>\n'):]
-    if re.match(r'\n</div>\n', after):
-        break
-insert_pos = i + len('\n  </div>\n')
-code = code[:insert_pos] + '\n' + SECCION + code[insert_pos:]
+cierre_sec = code.find('\n  </div>', idx_tbody_q)          # primer cierre con indentacion de 2 espacios
+assert cierre_sec != -1, "no se hallo cierre de secciones"
+insert_pos = cierre_sec + len('\n  </div>') + 1            # saltar tambien el salto de linea
+code = code[:insert_pos] + '\n' + SECCION + '\n' + code[insert_pos:]
 print("OK: seccion actas + modal insertados")
 
 # ---------- JS ----------
